@@ -1,0 +1,53 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# Composite action - Install build tools and compile the module from source.
+# ──────────────────────────────────────────────────────────────────────────────
+name: Prepare Panda3D SDK
+description: >
+  Builds the Panda3D module from source.
+
+runs:
+  using: composite
+  steps:
+    - name: Install Python build tools
+      shell: bash
+      run: pip install build "setuptools>=64" wheel
+
+    - name: Install Interrogate 
+      shell: bash
+      run: pip install panda3d-interrogate
+
+    - name: Compute semantic version
+      id: semver
+      uses: paulhatch/semantic-version@v5.4.0
+      with:
+        tag_prefix: "v"
+        major_pattern: "/!:|BREAKING CHANGE:/"
+        minor_pattern: "/feat(\\(.+\\))?:/"
+        version_format: "${major}.${minor}.${patch}"
+
+    # Determine the version to build. If we're building a tagged release, use the tag as the version.
+    # Otherwise, use the computed semantic version with a .dev suffix to indicate a pre-release.
+    - name: Determine build version
+      id: version
+      shell: bash
+      run: |
+        if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+          # Tags are published as stable versions (e.g. 1.2.3).
+          VERSION="${GITHUB_REF#refs/tags/v}"
+        else
+          # Branch builds are published as pre-releases (e.g. 1.2.4.dev3).
+          VERSION="${{ steps.semver.outputs.version }}.dev${{ steps.semver.outputs.increment }}"
+        fi
+        echo "Resolved package version: $VERSION"
+        echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+    - name: Build wheel
+      shell: bash
+      env:
+        SETUPTOOLS_SCM_PRETEND_VERSION: ${{ steps.version.outputs.version }}
+        PYTHONPATH: ${{ github.workspace }}/panda3d-src/built
+        LD_LIBRARY_PATH: ${{ github.workspace }}/panda3d-src/built/lib
+        DYLD_LIBRARY_PATH: ${{ github.workspace }}/panda3d-src/built/lib
+      # CI builds Panda3D from source (not pip-installable), so we must
+      # skip build isolation and rely on PYTHONPATH to find it.
+      run: python -m build --wheel --no-isolation

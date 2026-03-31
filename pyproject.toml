@@ -1,0 +1,33 @@
+[project]
+name = "panda3d-config"
+dynamic = ["version"]
+description = "Configuration utilities for the Panda3D game engine"
+readme = "README.md"
+license = {file = "LICENSE"}
+requires-python = ">=3.9"
+dependencies = [
+    "panda3d",
+    "panda3d-toolbox",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS",
+    "Programming Language :: Python :: 3",
+    "Topic :: Games/Entertainment",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+
+[project.urls]
+Homepage = "https://github.com/DigitalDescent/panda3d-config"
+
+[tool.setuptools_scm]
+local_scheme = "no-local-version"
+
+[tool.setuptools]
+packages = ["panda3d_config"]
+
+[tool.setuptools.package-data]
+panda3d_config = ["*.pyd", "*.so", "*.dll", "*.dylib", "*.pdb"]
